@@ -8,7 +8,8 @@ import { User } from '../model/user.model';
 const register = async (req: Request, res: Response) => {
   try {
     const { email } = req.body;
-    
+    const file = req.file;
+
     // Check if user already exists
     const isUserExist = await User.findOne({ email });
 
@@ -17,6 +18,14 @@ const register = async (req: Request, res: Response) => {
         success: false,
         message: 'User already exists!',
       });
+    }
+
+    // ২. যদি ইমেজ ফাইল থাকে, তবে সেটার পাথ req.body তে সেট করা
+    // এখানে 'image' হলো আপনার ডাটাবেস মডেলের ফিল্ডের নাম
+    if (file) {
+      // আপনি যদি Cloudinary ব্যবহার না করেন, তবে লোকাল পাথ সেভ হবে
+      // ব্রাউজারে দেখানোর জন্য 'uploads/filename.jpg' ফরম্যাটে রাখা ভালো
+      req.body.image = file.path.replace(/\\/g, "/"); 
     }
 
     const savedUser = await User.create(req.body);

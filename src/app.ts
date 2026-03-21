@@ -1,6 +1,7 @@
 import cors from 'cors';
 import express, { Application, Request, Response} from 'express';
 import router from './routes';
+import path from 'path';
 // import router from './routes';
 
 const app: Application = express();
@@ -8,6 +9,9 @@ const app: Application = express();
 // Parsers
 app.use(express.json());
 app.use(cors());
+
+// Profile img 
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // Application routes
 app.use('/api/v1', router);
