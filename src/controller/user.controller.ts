@@ -106,6 +106,49 @@ const login = async (req: Request, res: Response) => {
   }
 };
 
+// Update Profile
+const updateProfile = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.user; // এটা আসবে আপনার Auth Middleware থেকে
+    const { name } = req.body;
+    const file = req.file;
+
+    const updateData: any = {};
+    if (name) updateData.name = name;
+    
+    if (file) {
+      // উইন্ডোজের ব্যাকস্ল্যাশ ফিক্স করে পাথ সেভ করা
+      updateData.image = file.path.replace(/\\/g, "/");
+    }
+
+    // ইমেইল দিয়ে ইউজার খুঁজে আপডেট করা
+    const updatedUser = await User.findOneAndUpdate(
+      { email },
+      updateData,
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found!',
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: updatedUser,
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update profile',
+      error: err.message,
+    });
+  }
+};
+
 // Get all users
 const getUsers = async (req: Request, res: Response) => {
   try {
@@ -128,4 +171,5 @@ export const userControllers = {
   register,
   login,
   getUsers,
+  updateProfile,
 };

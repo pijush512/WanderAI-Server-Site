@@ -12,6 +12,3 @@ export default {
   gemini_api_key: process.env.GEMINI_API_KEY,
 };
 
-// wanderDb
-
-// 2HAfLzOZVPittsNC
