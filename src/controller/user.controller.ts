@@ -32,7 +32,11 @@ const register = async (req: Request, res: Response) => {
     
     // Generate token
     const token = jwt.sign(
-      { email: savedUser.email, role: savedUser.role },
+      { 
+        _id: savedUser._id,
+        email: savedUser.email, 
+        role: savedUser.role 
+      },
       config.jwt_secret as Secret,
       { expiresIn: config.jwt_expires_in as any }
     );
@@ -81,7 +85,11 @@ const login = async (req: Request, res: Response) => {
 
     // Generate token
     const token = jwt.sign(
-      { email: user.email, role: user.role },
+      { 
+        _id: user._id,
+        email: user.email, 
+        role: user.role 
+      },
       config.jwt_secret as Secret,
       { expiresIn: config.jwt_expires_in as any }
     );

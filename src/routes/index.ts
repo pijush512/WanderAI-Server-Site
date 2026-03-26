@@ -18,6 +18,10 @@ const moduleRoutes = [
     path: '/ai',
     route: AiRoutes,
   },
+  {
+    path: '/admin',
+    route: AiRoutes,
+  }
 ];
 
 moduleRoutes.forEach((route) => router.use(route.path, route.route));

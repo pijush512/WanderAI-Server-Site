@@ -7,8 +7,14 @@ import path from 'path';
 const app: Application = express();
 
 // Parsers
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://localhost:5173'], // আপনার ফ্রন্টএন্ড ইউআরএল
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT','PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
-app.use(cors());
+
 
 // Profile img 
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
