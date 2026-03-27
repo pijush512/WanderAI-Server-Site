@@ -14,14 +14,16 @@ const groq = new Groq({
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
     // পাসওয়ার্ড বাদে সব ইউজার নিয়ে আসা
-    const users = await User.find().select('-password').sort({ createdAt: -1 });
-    
+    const users = await User.find().select("-password").sort({ createdAt: -1 });
+
     res.status(200).json({
       success: true,
       data: users,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Users could not be fetched" });
+    res
+      .status(500)
+      .json({ success: false, message: "Users could not be fetched" });
   }
 };
 
@@ -29,10 +31,10 @@ const deleteUser = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     await User.findByIdAndDelete(id);
-    
+
     res.status(200).json({
       success: true,
-      message: "Explorer removed from the database"
+      message: "Explorer removed from the database",
     });
   } catch (error) {
     res.status(500).json({ success: false, message: "Deletion failed" });
@@ -50,7 +52,6 @@ const deleteUser = async (req: Request, res: Response) => {
 //     }
 //   });
 // };
-
 
 // AI ট্রিপ জেনারেট করা
 export const generateTripPlan = async (req: Request, res: Response) => {
@@ -147,8 +148,7 @@ const getPublicTrips = async (req: Request, res: Response) => {
   try {
     const result = await Trip.find()
       .populate("user", "name image")
-      .sort({ createdAt: -1 })
-      .limit(8);
+      .sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
@@ -169,26 +169,35 @@ export const getSingleTripDetails = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    // ১. আইডিটা কি আদেও মঙ্গোডিবি ফরম্যাটে আছে? 
+    // ১. আইডিটা কি আদেও মঙ্গোডিবি ফরম্যাটে আছে?
     if (!id.match(/^[0-9a-fA-F]{24}$/)) {
-      return res.status(400).json({ success: false, message: "Invalid Trip ID format" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid Trip ID format" });
     }
 
     const trip = await Trip.findById(id).populate("user", "name image");
-    
+
     // ২. যদি ট্রিপ খুঁজে না পাওয়া যায়
     if (!trip) {
-      return res.status(404).json({ success: false, message: "Trip not found in database" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Trip not found in database" });
     }
 
-    const reviews = await Review.find({ trip: id }).populate("user", "name image");
+    const reviews = await Review.find({ trip: id }).populate(
+      "user",
+      "name image",
+    );
 
     res.status(200).json({
       success: true,
-      data: { trip, reviews }
+      data: { trip, reviews },
     });
   } catch (err: any) {
-    res.status(500).json({ success: false, message: "Server error", error: err.message });
+    res
+      .status(500)
+      .json({ success: false, message: "Server error", error: err.message });
   }
 };
 
@@ -202,16 +211,22 @@ const createReview = async (req: Request, res: Response) => {
       user: userId,
       trip,
       rating: Number(rating),
-      comment
+      comment,
     });
 
     res.status(201).json({
       success: true,
       message: "Review submitted successfully",
-      data: result
+      data: result,
     });
   } catch (err: any) {
-    res.status(500).json({ success: false, message: "Failed to create review", error: err.message });
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Failed to create review",
+        error: err.message,
+      });
   }
 };
 
@@ -222,8 +237,8 @@ const getAllReviews = async (req: Request, res: Response) => {
 
     // লগইন করা ইউজারের সব রিভিউ খুঁজে বের করা এবং ট্রিপের নাম পপুলেট করা
     const result = await Review.find({ user: userId })
-    .populate("user", "name image")  
-    .populate("trip", "destination") // শুধু ডেস্টিনেশনের নাম দেখাবে
+      .populate("user", "name image")
+      .populate("trip", "destination") // শুধু ডেস্টিনেশনের নাম দেখাবে
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -241,50 +256,115 @@ const getAllReviews = async (req: Request, res: Response) => {
 };
 
 // Admin status
+// export const getAdminDashboardStats = async (req: Request, res: Response) => {
+//   try {
+//     // ১. সরাসরি ডাটাবেস থেকে কাউন্ট নেওয়া
+//     const totalUsers = await User.countDocuments();
+//     const totalTrips = await Trip.countDocuments();
+
+//     // ২. ইউনিক ডেস্টিনেশন কাউন্ট
+//     const uniqueDestinations = await Trip.distinct("destination");
+//     const activeRegionsCount = uniqueDestinations.length;
+
+//     // ৩. সর্বশেষ ৫টি অ্যাক্টিভিটি (Live Logs)
+//     const recentLogs = await Trip.find()
+//       .populate("user", "name")
+//       .sort({ createdAt: -1 })
+//       .limit(5);
+
+//     // ৪. চার্টের জন্য একদম সিম্পল ডাটা (ডাটাবেস থেকে শেষ ৭টি ট্রিপের কাউন্ট)
+//     // জটিল এগ্রিগেশন বাদ দিয়ে আমরা ম্যানুয়াল একটি ডামি ফরম্যাট দিচ্ছি যা ফ্রন্টএন্ডে এরর দিবে না
+//     const chartData = [
+//       { name: 'Sat', trips: Math.floor(totalTrips / 4) },
+//       { name: 'Sun', trips: Math.floor(totalTrips / 3) },
+//       { name: 'Mon', trips: Math.floor(totalTrips / 2) },
+//       { name: 'Tue', trips: totalTrips },
+//     ];
+
+//     res.status(200).json({
+//       success: true,
+//       data: {
+//         totalUsers,
+//         totalTrips,
+//         activeRegions: activeRegionsCount,
+//         serverStatus: "Operational",
+//         chartData,
+//         recentLogs: recentLogs.map(log => ({
+//           user: { name: (log.user as any)?.name || "Explorer" },
+//           destination: log.destination || "Unknown",
+//           createdAt: log.createdAt
+//         }))
+//       }
+//     });
+//   } catch (error: any) {
+//     res.status(500).json({ success: false, message: error.message });
+//   }
+// };
+
 export const getAdminDashboardStats = async (req: Request, res: Response) => {
   try {
-    // ১. সরাসরি ডাটাবেস থেকে কাউন্ট নেওয়া
-    const totalUsers = await User.countDocuments();
-    const totalTrips = await Trip.countDocuments();
-    
-    // ২. ইউনিক ডেস্টিনেশন কাউন্ট
-    const uniqueDestinations = await Trip.distinct("destination");
-    const activeRegionsCount = uniqueDestinations.length;
+    const [totalUsers, totalTrips, totalReviews, uniqueDestinations] =
+      await Promise.all([
+        User.countDocuments(),
+        Trip.countDocuments(),
+        Review.countDocuments(),
+        Trip.distinct("destination"),
+      ]);
 
-    // ৩. সর্বশেষ ৫টি অ্যাক্টিভিটি (Live Logs)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const statsByDay = await Trip.aggregate([
+      { $match: { createdAt: { $gte: sevenDaysAgo } } },
+      {
+        $group: {
+          // %w ব্যবহার করলে ০-৬ পর্যন্ত সংখ্যা দিবে (০ = রবিবার)
+          _id: { $dateToString: { format: "%w", date: "$createdAt" } }, 
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    // দিনগুলোর নাম ম্যাপিং
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    
+    // চার্টের জন্য ডাটা ফরম্যাট করা
+    const chartData = dayNames.map((day, index) => {
+      // statsByDay থেকে ওই দিনের কাউন্ট খুঁজে বের করা
+      const dayData = statsByDay.find((d) => parseInt(d._id) === index);
+      return { name: day, trips: dayData ? dayData.count : 0 };
+    });
+
+    // সর্বশেষ লগ
     const recentLogs = await Trip.find()
-      .populate("user", "name") 
+      .populate("user", "name image")
       .sort({ createdAt: -1 })
       .limit(5);
-
-    // ৪. চার্টের জন্য একদম সিম্পল ডাটা (ডাটাবেস থেকে শেষ ৭টি ট্রিপের কাউন্ট)
-    // জটিল এগ্রিগেশন বাদ দিয়ে আমরা ম্যানুয়াল একটি ডামি ফরম্যাট দিচ্ছি যা ফ্রন্টএন্ডে এরর দিবে না
-    const chartData = [
-      { name: 'Sat', trips: Math.floor(totalTrips / 4) },
-      { name: 'Sun', trips: Math.floor(totalTrips / 3) },
-      { name: 'Mon', trips: Math.floor(totalTrips / 2) },
-      { name: 'Tue', trips: totalTrips },
-    ];
 
     res.status(200).json({
       success: true,
       data: {
         totalUsers,
         totalTrips,
-        activeRegions: activeRegionsCount,
+        totalReviews,
+        activeRegions: uniqueDestinations.length,
         serverStatus: "Operational",
         chartData,
-        recentLogs: recentLogs.map(log => ({
-          user: { name: (log.user as any)?.name || "Explorer" },
+        recentLogs: recentLogs.map((log) => ({
+          user: {
+            name: (log.user as any)?.name || "Explorer",
+            image: (log.user as any)?.image,
+          },
           destination: log.destination || "Unknown",
-          createdAt: log.createdAt
-        }))
-      }
+          createdAt: log.createdAt,
+        })),
+      },
     });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 
 // ইউজার রোল আপডেট করার জন্য (Admin <-> User)
 export const updateUserRole = async (req: Request, res: Response) => {
@@ -295,8 +375,8 @@ export const updateUserRole = async (req: Request, res: Response) => {
     const updatedUser = await User.findByIdAndUpdate(
       id,
       { role },
-      { new: true, runValidators: true }
-    ).select('-password');
+      { new: true, runValidators: true },
+    ).select("-password");
 
     res.status(200).json({
       success: true,
@@ -317,8 +397,8 @@ export const updateUserStatus = async (req: Request, res: Response) => {
     const updatedUser = await User.findByIdAndUpdate(
       id,
       { status },
-      { new: true, runValidators: true }
-    ).select('-password');
+      { new: true, runValidators: true },
+    ).select("-password");
 
     res.status(200).json({
       success: true,
@@ -352,10 +432,10 @@ export const deleteContent = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     await Trip.findByIdAndDelete(id);
-    
+
     res.status(200).json({
       success: true,
-      message: "Content deleted successfully"
+      message: "Content deleted successfully",
     });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
@@ -371,11 +451,13 @@ export const updateContentStatus = async (req: Request, res: Response) => {
     const updatedTrip = await Trip.findByIdAndUpdate(
       id,
       { status },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     );
 
     if (!updatedTrip) {
-      return res.status(404).json({ success: false, message: "Trip not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Trip not found" });
     }
 
     res.status(200).json({
@@ -391,58 +473,90 @@ export const updateContentStatus = async (req: Request, res: Response) => {
 export const getSystemStats = async (req: Request, res: Response) => {
   try {
     // ১. ডাটাবেস থেকে আসল কাউন্ট নেওয়া
-    const [totalUsers, totalTrips, totalReviews, latestTrips] = await Promise.all([
-      User.countDocuments(),
-      Trip.countDocuments(),
-      Review.countDocuments(),
-      Trip.find().populate("user", "name").sort({ createdAt: -1 }).limit(5)
-    ]);
+    const [totalUsers, totalTrips, totalReviews, latestTrips] =
+      await Promise.all([
+        User.countDocuments(),
+        Trip.countDocuments(),
+        Review.countDocuments(),
+        Trip.find().populate("user", "name").sort({ createdAt: -1 }).limit(5),
+      ]);
 
     // ২. ফ্রন্টএন্ডের জন্য ডাইনামিক নোড ডাটা
     const systemNodes = [
-      { 
-        name: "Explorer Directory", 
-        status: "Operational", 
-        uptime: "100%", 
-        latency: `${totalUsers} Users`, 
-        iconType: "Server", 
-        healthScore: 100 
+      {
+        name: "Explorer Directory",
+        status: "Operational",
+        uptime: "100%",
+        latency: `${totalUsers} Users`,
+        iconType: "Server",
+        healthScore: 100,
       },
-      { 
-        name: "Trip Database", 
-        status: "Active", 
-        uptime: "99.9%", 
-        latency: `${totalTrips} Plans`, 
-        iconType: "Database", 
-        healthScore: 100 
+      {
+        name: "Trip Database",
+        status: "Active",
+        uptime: "99.9%",
+        latency: `${totalTrips} Plans`,
+        iconType: "Database",
+        healthScore: 100,
       },
-      { 
-        name: "AI Review Engine", 
-        status: "Operational", 
-        uptime: "100%", 
-        latency: `${totalReviews} Reviews`, 
-        iconType: "Cpu", 
-        healthScore: 100 
-      }
+      {
+        name: "AI Review Engine",
+        status: "Operational",
+        uptime: "100%",
+        latency: `${totalReviews} Reviews`,
+        iconType: "Cpu",
+        healthScore: 100,
+      },
     ];
 
     // ৩. লাইভ ট্রিপ থেকে ইভেন্ট লগ তৈরি
-    const recentLogs = latestTrips.map(trip => ({
+    const recentLogs = latestTrips.map((trip) => ({
       timestamp: trip.createdAt,
       message: `${(trip.user as any)?.name || "User"} generated a trip to ${trip.destination}`,
-      type: "success"
+      type: "success",
     }));
 
     // ৪. রেসপন্স পাঠানো
     res.status(200).json({
       success: true,
       systemNodes,
-      recentLogs: recentLogs.length > 0 ? recentLogs : [{ timestamp: new Date(), message: "No recent activity", type: "info" }]
+      recentLogs:
+        recentLogs.length > 0
+          ? recentLogs
+          : [
+              {
+                timestamp: new Date(),
+                message: "No recent activity",
+                type: "info",
+              },
+            ],
     });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// হোমপেজে সবার রিভিউ দেখানোর জন্য (Public)
+export const getPublicReviews = async (req: Request, res: Response) => {
+  try {
+    const result = await Review.find()
+      .populate("user", "name image")
+      .populate("trip", "destination")
+      .sort({ createdAt: -1 })
+      .limit(6); // সর্বশেষ ৬টি রিভিউ দেখাবে
+
+    res.status(200).json({
+      success: true,
+      message: "Public reviews fetched successfully",
+      data: result,
+    });
+  } catch (err: any) {
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch reviews" });
+  }
+};
+
 
 // এক্সপোর্ট অবজেক্ট (যাতে রাউটে এরর না আসে)
 export const aiControllers = {
@@ -460,6 +574,6 @@ export const aiControllers = {
   updateUserStatus,
   getAllContents,
   deleteContent,
-  updateContentStatus
-
+  updateContentStatus,
+  getPublicReviews
 };

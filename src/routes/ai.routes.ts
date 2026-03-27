@@ -26,7 +26,8 @@ router.patch('/users/:id/status', auth('admin'), aiControllers.updateUserStatus)
 
 // Public Route (লগইন লাগবে না)
 router.get('/all-trips', aiControllers.getPublicTrips);
-
+router.get('/trip-details/:id', aiControllers.getSingleTripDetails); // ✅ নতুন
+router.get('/all-reviews', aiControllers.getPublicReviews); // ✅ নতুন (হোমপেজ রিভিউ সেকশনের জন্য)
 
 
 // router.post('/generate-description', aiControllers.generateDescription);

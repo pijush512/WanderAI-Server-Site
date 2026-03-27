@@ -175,9 +175,12 @@ const getUsers = async (req: Request, res: Response) => {
   }
 };
 
+
+
 export const userControllers = {
   register,
   login,
   getUsers,
   updateProfile,
+ 
 };
