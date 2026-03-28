@@ -1,139 +1,12 @@
-// import { Request, Response } from 'express';
-// import { Event } from '../model/event.model';
-
-// // Create event
-//  const createEvent = async (req: Request, res: Response) => {
-//   try {
-//     const savedEvent = await Event.create(req.body);
-//     res.status(201).json({
-//       success: true,
-//       message: 'Event created successfully',
-//       data: savedEvent,
-//     });
-
-//   } catch (err: any) {
-//     res.status(500).json({
-//       success: false,
-//       message: 'Failed to create event',
-//       error: err.message,
-//     });
-//   }
-// };
-
-// // Get all events
-//  const getEvents = async (req: Request, res: Response) => {
-//   try {
-//     const events = await Event.find();
-//     res.status(200).json({
-//       success: true,
-//       message: 'Events fetched successfully',
-//       data: events,
-//     });
-//   } catch (err: any) {
-//     res.status(500).json({
-//       success: false,
-//       message: 'Failed to fetch events',
-//       error: err.message,
-//     });
-//   }
-// };
-
-// // Get single event
-//  const getEventById = async (req: Request, res: Response) => {
-//   try {
-//     const event = await Event.findById(req.params.id);
-//     if (!event) {
-//       return res.status(404).json({
-//         success: false,
-//         message: 'Event not found',
-//       });
-//     }
-//     res.status(200).json({
-//       success: true,
-//       message: 'Event fetched successfully',
-//       data: event,
-//     });
-//   } catch (err: any) {
-//     res.status(500).json({
-//       success: false,
-//       message: 'Failed to fetch event',
-//       error: err.message,
-//     });
-//   }
-// };
-
-// // Update event
-//  const updateEvent = async (req: Request, res: Response) => {
-//   try {
-//     const updatedEvent = await Event.findByIdAndUpdate(
-//       req.params.id,
-//       req.body,
-//       { new: true, runValidators: true }
-//     );
-//     if (!updatedEvent) {
-//       return res.status(404).json({
-//         success: false,
-//         message: 'Event not found',
-//       });
-//     }
-//     res.status(200).json({
-//       success: true,
-//       message: 'Event updated successfully',
-//       data: updatedEvent,
-//     });
-//   } catch (err: any) {
-//     res.status(500).json({
-//       success: false,
-//       message: 'Failed to update event',
-//       error: err.message,
-//     });
-//   }
-// };
-
-// // Delete event
-//  const deleteEvent = async (req: Request, res: Response) => {
-//   try {
-//     const deletedEvent = await Event.findByIdAndDelete(req.params.id);
-//     if (!deletedEvent) {
-//       return res.status(404).json({
-//         success: false,
-//         message: 'Event not found',
-//       });
-//     }
-//     res.status(200).json({
-//       success: true,
-//       message: 'Event deleted successfully',
-//       data: null,
-//     });
-//   } catch (err: any) {
-//     res.status(500).json({
-//       success: false,
-//       message: 'Failed to delete event',
-//       error: err.message,
-//     });
-//   }
-// };
-
-// export const eventControllers = {
-//     createEvent,
-//     getEvents,
-//     getEventById,
-//     updateEvent,
-//     deleteEvent,
-// }
-
-
-
-
 import { Request, Response } from 'express';
 import { Event } from '../model/event.model';
 
-// ১. নতুন ট্রিপ তৈরি (ইউজার ইমেইলসহ)
+// create new trip/event
 const createEvent = async (req: Request, res: Response) => {
   try {
     const eventData = {
       ...req.body,
-      userEmail: req.user?.email, // টোকেন থেকে ইমেইল নিয়ে অটোমেটিক সেভ হবে
+      userEmail: req.user?.email, 
     };
 
     const savedEvent = await Event.create(eventData);
@@ -151,12 +24,10 @@ const createEvent = async (req: Request, res: Response) => {
   }
 };
 
-// ২. শুধুমাত্র লগইন করা ইউজারের ট্রিপগুলো পাওয়ার জন্য (NEW)
+// get event for login user
 const getMyEvents = async (req: Request, res: Response) => {
   try {
-    const userEmail = req.user?.email; // টোকেন থেকে ইমেইল নেওয়া হচ্ছে
-
-    // ডাটাবেস থেকে শুধু ওই ইউজারের ট্রিপগুলো খুঁজে বের করা
+    const userEmail = req.user?.email;
     const events = await Event.find({ userEmail: userEmail }).sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -173,7 +44,7 @@ const getMyEvents = async (req: Request, res: Response) => {
   }
 };
 
-// ৩. সব ইভেন্ট পাওয়া (অ্যাডমিনের জন্য কাজে লাগবে)
+// all event
 const getEvents = async (req: Request, res: Response) => {
   try {
     const events = await Event.find().sort({ createdAt: -1 });
@@ -191,7 +62,7 @@ const getEvents = async (req: Request, res: Response) => {
   }
 };
 
-// ৪. সিঙ্গেল ইভেন্ট পাওয়া
+// Single event
 const getEventById = async (req: Request, res: Response) => {
   try {
     const event = await Event.findById(req.params.id);
@@ -215,7 +86,7 @@ const getEventById = async (req: Request, res: Response) => {
   }
 };
 
-// ৫. ইভেন্ট আপডেট করা
+// Update event
 const updateEvent = async (req: Request, res: Response) => {
   try {
     const updatedEvent = await Event.findByIdAndUpdate(
@@ -243,7 +114,7 @@ const updateEvent = async (req: Request, res: Response) => {
   }
 };
 
-// ৬. ইভেন্ট ডিলিট করা
+// delete event
 const deleteEvent = async (req: Request, res: Response) => {
   try {
     const deletedEvent = await Event.findByIdAndDelete(req.params.id);
@@ -270,7 +141,7 @@ const deleteEvent = async (req: Request, res: Response) => {
 export const eventControllers = {
   createEvent,
   getEvents,
-  getMyEvents, // নতুন অ্যাড করা ফাংশন
+  getMyEvents, 
   getEventById,
   updateEvent,
   deleteEvent,

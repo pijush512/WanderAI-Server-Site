@@ -5,7 +5,7 @@ import Groq from "groq-sdk";
 import { Review } from "../model/review.model";
 import { User } from "../model/user.model";
 
-// ১. Groq ক্লায়েন্ট সেটআপ (এখন config.groq_api_key একদম সঠিক ডাটা পাবে)
+//Groq config.groq_api_key 
 const groq = new Groq({
   apiKey: config.groq_api_key as string,
 });
@@ -13,9 +13,7 @@ const groq = new Groq({
 // Get User
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
-    // পাসওয়ার্ড বাদে সব ইউজার নিয়ে আসা
     const users = await User.find().select("-password").sort({ createdAt: -1 });
-
     res.status(200).json({
       success: true,
       data: users,
@@ -41,32 +39,17 @@ const deleteUser = async (req: Request, res: Response) => {
   }
 };
 
-// const getSystemStats = async (req: Request, res: Response) => {
-//   // এটি আপনার Admin Status Page এর জন্য ডাটা পাঠাবে
-//   res.status(200).json({
-//     success: true,
-//     data: {
-//       server: "Operational",
-//       database: "Connected",
-//       aiInference: "Active"
-//     }
-//   });
-// };
-
-// AI ট্রিপ জেনারেট করা
+// generate AI trip
 export const generateTripPlan = async (req: Request, res: Response) => {
   try {
     const { destination, days, budget, travelers } = req.body;
 
-    // ২. ভ্যালিডেশন
     if (!destination || !days) {
       return res.status(400).json({
         success: false,
         message: "Destination and days are required",
       });
     }
-
-    // ৩. Groq এআই এর মাধ্যমে ট্রিপ প্ল্যান তৈরি
     const chatCompletion = await groq.chat.completions.create({
       messages: [
         {
@@ -83,8 +66,8 @@ export const generateTripPlan = async (req: Request, res: Response) => {
           }`,
         },
       ],
-      model: "llama-3.1-8b-instant", // এটি খুব ফাস্ট কাজ করে
-      response_format: { type: "json_object" }, // এটি নিশ্চিত করে আউটপুট JSON হবে
+      model: "llama-3.1-8b-instant", 
+      response_format: { type: "json_object" }, 
     });
 
     const aiContent = chatCompletion.choices[0]?.message?.content;
@@ -92,17 +75,15 @@ export const generateTripPlan = async (req: Request, res: Response) => {
 
     const tripData = JSON.parse(aiContent);
 
-    // ৪. ডাটাবেসে সেভ করা
     const newTrip = await Trip.create({
       destination,
       days: Number(days),
       budget,
       travelers: Number(travelers) || 1,
       plan: tripData,
-      user: (req as any).user?._id, // যদি অথেন্টিকেশন থাকে
+      user: (req as any).user?._id, 
     });
 
-    // ৫. সাকসেস রেসপন্স
     res.status(200).json({
       success: true,
       message: "Trip plan generated via Groq successfully!",
@@ -120,12 +101,10 @@ export const generateTripPlan = async (req: Request, res: Response) => {
 
 export const getAllTrips = async (req: Request, res: Response) => {
   try {
-    // শুধুমাত্র লগইন করা ইউজারের আইডি নেওয়া
     const userId = (req as any).user?._id;
 
-    // শুধু ওই ইউজারের ট্রিপগুলো খুঁজে বের করা
     const result = await Trip.find({ user: userId })
-      .populate("user", "name email image") // ইউজারের নাম ও ছবিসহ দেখাবে
+      .populate("user", "name email image")
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -143,7 +122,7 @@ export const getAllTrips = async (req: Request, res: Response) => {
   }
 };
 
-// **হোম পেজের জন্য পাবলিক ট্রিপ দেখা (Public)**
+// get public trip
 const getPublicTrips = async (req: Request, res: Response) => {
   try {
     const result = await Trip.find()
@@ -169,7 +148,6 @@ export const getSingleTripDetails = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    // ১. আইডিটা কি আদেও মঙ্গোডিবি ফরম্যাটে আছে?
     if (!id.match(/^[0-9a-fA-F]{24}$/)) {
       return res
         .status(400)
@@ -178,7 +156,6 @@ export const getSingleTripDetails = async (req: Request, res: Response) => {
 
     const trip = await Trip.findById(id).populate("user", "name image");
 
-    // ২. যদি ট্রিপ খুঁজে না পাওয়া যায়
     if (!trip) {
       return res
         .status(404)
@@ -201,7 +178,7 @@ export const getSingleTripDetails = async (req: Request, res: Response) => {
   }
 };
 
-// ৪. নতুন রিভিউ তৈরি করা (Private)
+// creat review private
 const createReview = async (req: Request, res: Response) => {
   try {
     const { trip, rating, comment } = req.body;
@@ -235,10 +212,10 @@ const getAllReviews = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?._id;
 
-    // লগইন করা ইউজারের সব রিভিউ খুঁজে বের করা এবং ট্রিপের নাম পপুলেট করা
+    
     const result = await Review.find({ user: userId })
       .populate("user", "name image")
-      .populate("trip", "destination") // শুধু ডেস্টিনেশনের নাম দেখাবে
+      .populate("trip", "destination")
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -254,52 +231,6 @@ const getAllReviews = async (req: Request, res: Response) => {
     });
   }
 };
-
-// Admin status
-// export const getAdminDashboardStats = async (req: Request, res: Response) => {
-//   try {
-//     // ১. সরাসরি ডাটাবেস থেকে কাউন্ট নেওয়া
-//     const totalUsers = await User.countDocuments();
-//     const totalTrips = await Trip.countDocuments();
-
-//     // ২. ইউনিক ডেস্টিনেশন কাউন্ট
-//     const uniqueDestinations = await Trip.distinct("destination");
-//     const activeRegionsCount = uniqueDestinations.length;
-
-//     // ৩. সর্বশেষ ৫টি অ্যাক্টিভিটি (Live Logs)
-//     const recentLogs = await Trip.find()
-//       .populate("user", "name")
-//       .sort({ createdAt: -1 })
-//       .limit(5);
-
-//     // ৪. চার্টের জন্য একদম সিম্পল ডাটা (ডাটাবেস থেকে শেষ ৭টি ট্রিপের কাউন্ট)
-//     // জটিল এগ্রিগেশন বাদ দিয়ে আমরা ম্যানুয়াল একটি ডামি ফরম্যাট দিচ্ছি যা ফ্রন্টএন্ডে এরর দিবে না
-//     const chartData = [
-//       { name: 'Sat', trips: Math.floor(totalTrips / 4) },
-//       { name: 'Sun', trips: Math.floor(totalTrips / 3) },
-//       { name: 'Mon', trips: Math.floor(totalTrips / 2) },
-//       { name: 'Tue', trips: totalTrips },
-//     ];
-
-//     res.status(200).json({
-//       success: true,
-//       data: {
-//         totalUsers,
-//         totalTrips,
-//         activeRegions: activeRegionsCount,
-//         serverStatus: "Operational",
-//         chartData,
-//         recentLogs: recentLogs.map(log => ({
-//           user: { name: (log.user as any)?.name || "Explorer" },
-//           destination: log.destination || "Unknown",
-//           createdAt: log.createdAt
-//         }))
-//       }
-//     });
-//   } catch (error: any) {
-//     res.status(500).json({ success: false, message: error.message });
-//   }
-// };
 
 export const getAdminDashboardStats = async (req: Request, res: Response) => {
   try {
@@ -318,24 +249,18 @@ export const getAdminDashboardStats = async (req: Request, res: Response) => {
       { $match: { createdAt: { $gte: sevenDaysAgo } } },
       {
         $group: {
-          // %w ব্যবহার করলে ০-৬ পর্যন্ত সংখ্যা দিবে (০ = রবিবার)
           _id: { $dateToString: { format: "%w", date: "$createdAt" } }, 
           count: { $sum: 1 },
         },
       },
     ]);
-
-    // দিনগুলোর নাম ম্যাপিং
     const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     
-    // চার্টের জন্য ডাটা ফরম্যাট করা
     const chartData = dayNames.map((day, index) => {
-      // statsByDay থেকে ওই দিনের কাউন্ট খুঁজে বের করা
       const dayData = statsByDay.find((d) => parseInt(d._id) === index);
       return { name: day, trips: dayData ? dayData.count : 0 };
     });
 
-    // সর্বশেষ লগ
     const recentLogs = await Trip.find()
       .populate("user", "name image")
       .sort({ createdAt: -1 })
@@ -366,7 +291,7 @@ export const getAdminDashboardStats = async (req: Request, res: Response) => {
 };
 
 
-// ইউজার রোল আপডেট করার জন্য (Admin <-> User)
+// user role
 export const updateUserRole = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -388,7 +313,7 @@ export const updateUserRole = async (req: Request, res: Response) => {
   }
 };
 
-// ইউজার স্ট্যাটাস আপডেট করার জন্য (Active <-> Suspended)
+// user status
 export const updateUserStatus = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -410,7 +335,7 @@ export const updateUserStatus = async (req: Request, res: Response) => {
   }
 };
 
-// সব কন্টেন্ট (Trips) এডমিন হিসেবে দেখার জন্য
+// get content by Adnmin 
 export const getAllContents = async (req: Request, res: Response) => {
   try {
     const contents = await Trip.find()
@@ -427,7 +352,7 @@ export const getAllContents = async (req: Request, res: Response) => {
   }
 };
 
-// কন্টেন্ট ডিলিট করার জন্য
+//delete content
 export const deleteContent = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -442,11 +367,11 @@ export const deleteContent = async (req: Request, res: Response) => {
   }
 };
 
-// // কন্টেন্ট বা ট্রিপের স্ট্যাটাস আপডেট করার জন্য
+// update content
 export const updateContentStatus = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { status } = req.body; // ফ্রন্টএন্ড থেকে 'published', 'draft' ইত্যাদি আসবে
+    const { status } = req.body; 
 
     const updatedTrip = await Trip.findByIdAndUpdate(
       id,
@@ -536,14 +461,14 @@ export const getSystemStats = async (req: Request, res: Response) => {
   }
 };
 
-// হোমপেজে সবার রিভিউ দেখানোর জন্য (Public)
+// get review public
 export const getPublicReviews = async (req: Request, res: Response) => {
   try {
     const result = await Review.find()
       .populate("user", "name image")
       .populate("trip", "destination")
       .sort({ createdAt: -1 })
-      .limit(6); // সর্বশেষ ৬টি রিভিউ দেখাবে
+      .limit(6); 
 
     res.status(200).json({
       success: true,
@@ -558,7 +483,6 @@ export const getPublicReviews = async (req: Request, res: Response) => {
 };
 
 
-// এক্সপোর্ট অবজেক্ট (যাতে রাউটে এরর না আসে)
 export const aiControllers = {
   getAllUsers,
   deleteUser,

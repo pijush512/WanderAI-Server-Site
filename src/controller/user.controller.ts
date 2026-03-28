@@ -20,11 +20,8 @@ const register = async (req: Request, res: Response) => {
       });
     }
 
-    // ২. যদি ইমেজ ফাইল থাকে, তবে সেটার পাথ req.body তে সেট করা
-    // এখানে 'image' হলো আপনার ডাটাবেস মডেলের ফিল্ডের নাম
+    
     if (file) {
-      // আপনি যদি Cloudinary ব্যবহার না করেন, তবে লোকাল পাথ সেভ হবে
-      // ব্রাউজারে দেখানোর জন্য 'uploads/filename.jpg' ফরম্যাটে রাখা ভালো
       req.body.image = file.path.replace(/\\/g, "/"); 
     }
 
@@ -117,7 +114,7 @@ const login = async (req: Request, res: Response) => {
 // Update Profile
 const updateProfile = async (req: Request, res: Response) => {
   try {
-    const { email } = req.user; // এটা আসবে আপনার Auth Middleware থেকে
+    const { email } = req.user;
     const { name } = req.body;
     const file = req.file;
 
@@ -125,11 +122,8 @@ const updateProfile = async (req: Request, res: Response) => {
     if (name) updateData.name = name;
     
     if (file) {
-      // উইন্ডোজের ব্যাকস্ল্যাশ ফিক্স করে পাথ সেভ করা
       updateData.image = file.path.replace(/\\/g, "/");
     }
-
-    // ইমেইল দিয়ে ইউজার খুঁজে আপডেট করা
     const updatedUser = await User.findOneAndUpdate(
       { email },
       updateData,
@@ -177,10 +171,10 @@ const getUsers = async (req: Request, res: Response) => {
 
 
 
+
 export const userControllers = {
   register,
   login,
   getUsers,
   updateProfile,
- 
 };

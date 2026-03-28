@@ -35,17 +35,16 @@ userSchema.pre('save', async function (next) {
 
 // Post-save middleware / hook : will run directly after saving a document
 userSchema.post('save', function (user) {
-// userSchema.post('save', function (user, next) {
-  // doc is the document that was just saved
-  // For example, we want to erase password field before returning doc after creation
-  // Or simply log the information
+
   console.log(`[Post-Save Hook]: A new user was created with email: ${user.email}`);
   
-  // Note: Modifying doc here won't save it to DB (unless you call .save() again), 
-  // but it does affect the object returned from the save() method in controller.
+  
   user.password = '';
   
   // next();
 });
 
 export const User = model<TUser>('User', userSchema);
+
+
+
