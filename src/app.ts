@@ -6,15 +6,35 @@ import path from "path";
 
 const app: Application = express();
 
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://wander-ai-client-site.vercel.app', 
+];
+
 // Parsers
+// app.use(
+//   cors({
+//     origin: true,
+//     credentials: true,
+//     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+//     allowedHeaders: ["Content-Type", "Authorization"],
+//   }),
+// );
+
 app.use(
   cors({
-    origin: true,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('CORS Not Allowed'));
+      }
+    },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  }),
+  })
 );
+
+
 app.use(express.json());
 
 // Profile img
