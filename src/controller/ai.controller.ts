@@ -42,6 +42,7 @@ const deleteUser = async (req: Request, res: Response) => {
 // generate AI trip
 export const generateTripPlan = async (req: Request, res: Response) => {
   try {
+    console.log("CHECK DECODED USER FROM REQ:", (req as any).user);
     const { destination, days, budget, travelers } = req.body;
 
     if (!destination || !days) {
@@ -50,6 +51,9 @@ export const generateTripPlan = async (req: Request, res: Response) => {
         message: "Destination and days are required",
       });
     }
+
+    console.log("Calling Groq API for destination:", destination);
+
     const chatCompletion = await groq.chat.completions.create({
       messages: [
         {
@@ -66,15 +70,16 @@ export const generateTripPlan = async (req: Request, res: Response) => {
           }`,
         },
       ],
-      model: "llama-3.1-8b-instant", 
+      model: "openai/gpt-oss-120b", 
       response_format: { type: "json_object" }, 
     });
 
     const aiContent = chatCompletion.choices[0]?.message?.content;
     if (!aiContent) throw new Error("AI response was empty");
+    console.log("AI Response received, parsing JSON...");
 
     const tripData = JSON.parse(aiContent);
-
+    console.log("Saving trip to MongoDB...");
     const newTrip = await Trip.create({
       destination,
       days: Number(days),
@@ -148,7 +153,7 @@ export const getSingleTripDetails = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+    if (!String(id).match(/^[0-9a-fA-F]{24}$/)) {
       return res
         .status(400)
         .json({ success: false, message: "Invalid Trip ID format" });
@@ -280,8 +285,10 @@ export const getAdminDashboardStats = async (req: Request, res: Response) => {
             name: (log.user as any)?.name || "Explorer",
             image: (log.user as any)?.image,
           },
+          // destination: log.destination || "Unknown",
+          // createdAt: log.createdAt,
           destination: log.destination || "Unknown",
-          createdAt: log.createdAt,
+          createdAt: (log as any).createdAt,
         })),
       },
     });
@@ -436,7 +443,7 @@ export const getSystemStats = async (req: Request, res: Response) => {
 
     // ৩. লাইভ ট্রিপ থেকে ইভেন্ট লগ তৈরি
     const recentLogs = latestTrips.map((trip) => ({
-      timestamp: trip.createdAt,
+      timestamp: (trip as any).createdAt,
       message: `${(trip.user as any)?.name || "User"} generated a trip to ${trip.destination}`,
       type: "success",
     }));

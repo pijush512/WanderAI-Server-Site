@@ -19,8 +19,8 @@ router.patch('/users/:id/status', auth('admin'), aiControllers.updateUserStatus)
 
 // Public Route 
 router.get('/all-trips', aiControllers.getPublicTrips);
-router.get('/trip-details/:id', aiControllers.getSingleTripDetails); // ✅ নতুন
-router.get('/all-reviews', aiControllers.getPublicReviews); // ✅ নতুন (হোমপেজ রিভিউ সেকশনের জন্য)
+router.get('/trip-details/:id', aiControllers.getSingleTripDetails); 
+router.get('/all-reviews', aiControllers.getPublicReviews); 
 
 // proctet route
 router.post('/generate-trip', auth(), aiControllers.generateTripPlan);
