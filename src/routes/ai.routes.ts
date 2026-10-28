@@ -3,6 +3,7 @@ import { aiControllers } from '../controller/ai.controller';
 import { auth } from '../middlewares/auth';
 
 
+
 const router = express.Router();
 // --- Admin related Routes 
 router.get('/users', auth('admin'), aiControllers.getAllUsers);
