@@ -48,9 +48,6 @@
 
 
 
-
-
-
 import bcrypt from 'bcrypt';
 import { Schema, model } from 'mongoose';
 import config from '../config';
@@ -68,7 +65,6 @@ const userSchema = new Schema<TUser>({
 
 // Pre-save middleware / hook : will run before saving a document
 userSchema.pre('save', async function (next) {
-  // 'this' refers to the document about to be saved
   const user = this;
 
   // Only hash the password if it has been modified (or is new)
@@ -83,16 +79,17 @@ userSchema.pre('save', async function (next) {
       Number(config.bcrypt_salt_rounds)
     );
     
-    next(); // 👈 এখানে next() কল করা আবশ্যক
+    next();
   } catch (error: any) {
     next(error);
   }
 });
 
 // Post-save middleware / hook : will run directly after saving a document
-userSchema.post('save', function (doc) {
+userSchema.post('save', function (doc, next) {
   console.log(`[Post-Save Hook]: A new user was created with email: ${doc.email}`);
   doc.password = '';
+  next();
 });
 
 export const User = model<TUser>('User', userSchema);
