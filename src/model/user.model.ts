@@ -47,7 +47,6 @@
 // export const User = model<TUser>('User', userSchema);
 
 
-
 import bcrypt from 'bcrypt';
 import { Schema, model } from 'mongoose';
 import config from '../config';
@@ -63,33 +62,28 @@ const userSchema = new Schema<TUser>({
   timestamps: true,
 });
 
-// Pre-save middleware / hook : will run before saving a document
+// Pre-save middleware to hash password
 userSchema.pre('save', async function (next) {
   const user = this;
 
-  // Only hash the password if it has been modified (or is new)
   if (!user.isModified('password')) {
     return next();
   }
 
   try {
-    // Hash password using bcrypt salt rounds from config
     user.password = await bcrypt.hash(
       user.password as string,
       Number(config.bcrypt_salt_rounds)
     );
-    
     next();
   } catch (error: any) {
     next(error);
   }
 });
 
-// Post-save middleware / hook : will run directly after saving a document
-userSchema.post('save', function (doc, next) {
-  console.log(`[Post-Save Hook]: A new user was created with email: ${doc.email}`);
-  doc.password = '';
-  next();
+// Remove password from response after saving
+userSchema.post('save', function (doc) {
+  console.log(`[Post-Save]: User saved with email: ${doc.email}`);
 });
 
 export const User = model<TUser>('User', userSchema);
