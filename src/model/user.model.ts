@@ -1,8 +1,60 @@
+// import bcrypt from 'bcrypt';
+// import { Schema, model } from 'mongoose';
+// import config from '../config';
+// import { TUser } from '../types/user.interface';
+
+
+// const userSchema = new Schema<TUser>({
+//   name: { type: String, required: true },
+//   email: { type: String, required: true, unique: true },
+//   password: { type: String, required: true, select: false },
+//   image: { type: String, default: "" },
+//   role: { type: String, enum: ['admin', 'user'], default: 'user' },
+// }, {
+//   timestamps: true,
+// });
+
+// // Pre-save middleware / hook : will run before saving a document
+// userSchema.pre('save', async function (next) {
+//   // 'this' refers to the document about to be saved
+//   const user = this;
+
+//   // Only hash the password if it has been modified (or is new)
+//   if (!user.isModified('password')) {
+//     return next();
+//   }
+
+//   // Hash password using bcrypt salt rounds from config
+//   user.password = await bcrypt.hash(
+//     user.password as string,
+//     Number(config.bcrypt_salt_rounds)
+//   );
+  
+//   //  next();
+// });
+
+// // Post-save middleware / hook : will run directly after saving a document
+// userSchema.post('save', function (user) {
+
+//   console.log(`[Post-Save Hook]: A new user was created with email: ${user.email}`);
+  
+  
+//   user.password = '';
+  
+//   // next();
+// });
+
+// export const User = model<TUser>('User', userSchema);
+
+
+
+
+
+
 import bcrypt from 'bcrypt';
 import { Schema, model } from 'mongoose';
 import config from '../config';
 import { TUser } from '../types/user.interface';
-
 
 const userSchema = new Schema<TUser>({
   name: { type: String, required: true },
@@ -24,27 +76,23 @@ userSchema.pre('save', async function (next) {
     return next();
   }
 
-  // Hash password using bcrypt salt rounds from config
-  user.password = await bcrypt.hash(
-    user.password as string,
-    Number(config.bcrypt_salt_rounds)
-  );
-  
-  //  next();
+  try {
+    // Hash password using bcrypt salt rounds from config
+    user.password = await bcrypt.hash(
+      user.password as string,
+      Number(config.bcrypt_salt_rounds)
+    );
+    
+    next(); // 👈 এখানে next() কল করা আবশ্যক
+  } catch (error: any) {
+    next(error);
+  }
 });
 
 // Post-save middleware / hook : will run directly after saving a document
-userSchema.post('save', function (user) {
-
-  console.log(`[Post-Save Hook]: A new user was created with email: ${user.email}`);
-  
-  
-  user.password = '';
-  
-  // next();
+userSchema.post('save', function (doc) {
+  console.log(`[Post-Save Hook]: A new user was created with email: ${doc.email}`);
+  doc.password = '';
 });
 
 export const User = model<TUser>('User', userSchema);
-
-
-
